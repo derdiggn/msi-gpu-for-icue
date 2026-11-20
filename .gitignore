@@ -1,0 +1,10 @@
+build/
+dist/
+*.obj
+*.pdb
+*.ilk
+LastCoverageResults.log
+
+# personal agent settings
+.claude/settings.local.json
+CLAUDE.local.md
