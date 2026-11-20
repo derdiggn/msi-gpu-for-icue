@@ -1,0 +1,35 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Rejects commit messages that do not follow Conventional Commits 1.0.0
+# (https://www.conventionalcommits.org). Enable once per clone with:
+#
+#   git config core.hooksPath .githooks
+#
+# Checks the header rules of @commitlint/config-conventional that matter in
+# practice (type, scope, subject case, trailing period, length). CI runs the
+# full commitlint on every pull request.
+header=$(head -n 1 "$1" | tr -d '\r')
+
+case "$header" in
+    "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+fail() {
+    echo "commit-msg: $1" >&2
+    echo "  header:  $header" >&2
+    echo "  format:  <type>(<optional scope>): <description>" >&2
+    echo "  types:   build chore ci docs feat fix perf refactor revert style test" >&2
+    echo "  example: fix(streamer): keep the last colour of a fade" >&2
+    exit 1
+}
+
+types='build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test'
+printf '%s\n' "$header" | grep -Eq "^($types)(\([a-z0-9][a-z0-9._/-]*\))?!?: [^ ]" ||
+    fail "not a Conventional Commit"
+
+subject=${header#*: }
+printf '%s\n' "$subject" | grep -Eq '^[A-Z][a-z]' && fail "start the description in lower case"
+case "$subject" in *.) fail "no full stop at the end of the description" ;; esac
+[ "${#header}" -le 100 ] || fail "the first line is longer than 100 characters"
+exit 0
