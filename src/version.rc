@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+//
+// Version resource of MsiGpuForIcue.dll (shown under Properties > Details).
+#include <winver.h>
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION MSIGPU_VERSION_MAJOR, MSIGPU_VERSION_MINOR, MSIGPU_VERSION_PATCH, 0
+PRODUCTVERSION MSIGPU_VERSION_MAJOR, MSIGPU_VERSION_MINOR, MSIGPU_VERSION_PATCH, 0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "msi-gpu-for-icue contributors"
+            VALUE "FileDescription", "iCUE plugin for MSI GeForce RTX 50 RGB lighting"
+            VALUE "FileVersion", MSIGPU_VERSION_STRING
+            VALUE "InternalName", "MsiGpuForIcue"
+            VALUE "LegalCopyright", "GPL-2.0-or-later"
+            VALUE "OriginalFilename", "MsiGpuForIcue.dll"
+            VALUE "ProductName", "msi-gpu-for-icue"
+            VALUE "ProductVersion", MSIGPU_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

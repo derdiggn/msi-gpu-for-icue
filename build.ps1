@@ -2,7 +2,9 @@
 #
 # Builds everything into .\build
 #
+#   build\MsiGpuForIcue.dll         the iCUE plugin
 #   build\gputest.exe               hardware test without iCUE
+#   build\plugintest.exe            loads the plugin like iCUE does
 #
 # Requires Visual Studio 2022 (the Build Tools are enough) with the C++ workload.
 param(
@@ -27,6 +29,7 @@ $ship = if ($Config -eq 'Release') { "$common /O2 /MT /DNDEBUG" } else { "$commo
 function Src([string[]]$files) { ($files | ForEach-Object { "`"$root\$_`"" }) -join ' ' }
 
 $core = Src 'src\nvapi_i2c.cpp', 'src\msi_gpu.cpp'
+$plugin = Src 'src\plugin.cpp', 'src\settings.cpp', 'src\color_streamer.cpp', 'src\device_description.cpp'
 
 function Invoke-Vc([string]$name, [string]$command) {
     $dir = Join-Path $obj $name
@@ -36,6 +39,15 @@ function Invoke-Vc([string]$name, [string]$command) {
 }
 
 
+Invoke-Vc 'plugin' ("rc /nologo /fo version.res `"$root\src\version.rc`" && " +
+    "cl $ship /LD /Fe`"$out\MsiGpuForIcue.dll`" $plugin $core version.res")
 Invoke-Vc 'gputest' "cl $ship /Fe`"$out\gputest.exe`" `"$root\tools\gputest.cpp`" $core"
+Invoke-Vc 'plugintest' "cl $ship /Fe`"$out\plugintest.exe`" `"$root\tools\plugintest.cpp`""
 
+# The plugin resolves the pictures relative to its own folder.
+foreach ($dir in @($out)) {
+    $old = Join-Path $dir 'images'
+    if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Recurse -Force }
+}
+Copy-Item -Recurse -Force (Join-Path $root 'images') $out
 Write-Host "Built into $out"
