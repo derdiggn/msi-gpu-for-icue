@@ -1,0 +1,36 @@
+name: Bug report
+description: The plugin does not load, the card is not shown, or the lighting misbehaves.
+labels: [bug]
+body:
+  - type: input
+    id: card
+    attributes:
+      label: Graphics card
+      placeholder: MSI GeForce RTX 5080 SUPRIM LIQUID SOC
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Plugin version, iCUE version, NVIDIA driver version, Windows version
+      placeholder: plugin 1.0.0, iCUE 5.52, driver 581.42, Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: gputest
+    attributes:
+      label: Output of `build\gputest.exe detect`
+      render: text
+  - type: textarea
+    id: log
+    attributes:
+      label: plugin.log
+      description: '%LOCALAPPDATA%\MsiGpuForIcue\plugin.log (set Verbose=1 in settings.ini for more detail)'
+      render: text
