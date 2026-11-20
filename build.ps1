@@ -5,6 +5,8 @@
 #   build\MsiGpuForIcue.dll         the iCUE plugin
 #   build\gputest.exe               hardware test without iCUE
 #   build\plugintest.exe            loads the plugin like iCUE does
+#   build\test\tests.exe            unit tests (run them with .\test.ps1)
+#   build\test\fake_nvapi64.dll     NvAPI stand-in used by the unit tests
 #
 # Requires Visual Studio 2022 (the Build Tools are enough) with the C++ workload.
 param(
@@ -25,11 +27,14 @@ $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
 
 $common = '/nologo /std:c++17 /EHsc /W4 /WX /permissive- /guard:cf /sdl /utf-8 /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX'
 $ship = if ($Config -eq 'Release') { "$common /O2 /MT /DNDEBUG" } else { "$common /Od /Zi /MTd" }
+# Tests always build unoptimised with debug info, which the coverage tool needs.
+$test = "$common /Od /Zi /MTd"
 
 function Src([string[]]$files) { ($files | ForEach-Object { "`"$root\$_`"" }) -join ' ' }
 
 $core = Src 'src\nvapi_i2c.cpp', 'src\msi_gpu.cpp'
 $plugin = Src 'src\plugin.cpp', 'src\settings.cpp', 'src\color_streamer.cpp', 'src\device_description.cpp'
+$tests = Src (Get-ChildItem "$root\tests\*.cpp" | ForEach-Object { "tests\$($_.Name)" })
 
 function Invoke-Vc([string]$name, [string]$command) {
     $dir = Join-Path $obj $name
@@ -38,16 +43,20 @@ function Invoke-Vc([string]$name, [string]$command) {
     if ($LASTEXITCODE -ne 0) { throw "build failed: $name" }
 }
 
+New-Item -ItemType Directory -Force (Join-Path $out 'test') | Out-Null
 
 Invoke-Vc 'plugin' ("rc /nologo /fo version.res `"$root\src\version.rc`" && " +
     "cl $ship /LD /Fe`"$out\MsiGpuForIcue.dll`" $plugin $core version.res")
 Invoke-Vc 'gputest' "cl $ship /Fe`"$out\gputest.exe`" `"$root\tools\gputest.cpp`" $core"
 Invoke-Vc 'plugintest' "cl $ship /Fe`"$out\plugintest.exe`" `"$root\tools\plugintest.cpp`""
+Invoke-Vc 'fake_nvapi' "cl $test /LD /Fe`"$out\test\fake_nvapi64.dll`" `"$root\tests\fake_nvapi\fake_nvapi.cpp`""
+Invoke-Vc 'tests' "cl $test /Fe`"$out\test\tests.exe`" $tests $plugin $core /link /DEBUG"
 
-# The plugin resolves the pictures relative to its own folder.
-foreach ($dir in @($out)) {
+# The plugin and the tests resolve the pictures relative to their own folder.
+foreach ($dir in $out, (Join-Path $out 'test')) {
     $old = Join-Path $dir 'images'
     if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Recurse -Force }
 }
 Copy-Item -Recurse -Force (Join-Path $root 'images') $out
+Copy-Item -Recurse -Force (Join-Path $root 'images') (Join-Path $out 'test')
 Write-Host "Built into $out"
