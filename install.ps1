@@ -68,7 +68,7 @@ function Get-OwnerSid([string]$path) {
 }
 
 # Folders whose ACL lets anyone but administrators, SYSTEM and TrustedInstaller write.
-function Test-WritableByOthers([string]$path) {
+function Test-ForeignWriteAccess([string]$path) {
     $admins = 'S-1-5-18', 'S-1-5-32-544', 'S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464'
     # 0x50000000 = GENERIC_ALL | GENERIC_WRITE, which ACLs may hold unmapped.
     $write = [int][Security.AccessControl.FileSystemRights]'WriteData, AppendData, Delete, ChangePermissions, TakeOwnership' -bor 0x50000000
@@ -87,7 +87,7 @@ $target = Join-Path $plugins 'MsiGpuForIcue'
 foreach ($path in $IcueDir, $plugins, $target, (Join-Path $target 'images')) {
     if (Test-ReparsePoint $path) { throw "$path is a link; refusing to install through it." }
 }
-if (Test-WritableByOthers $IcueDir) {
+if (Test-ForeignWriteAccess $IcueDir) {
     Write-Warning "$IcueDir can be modified by non-administrators. Anyone who can write there can also replace iCUE itself."
 }
 
